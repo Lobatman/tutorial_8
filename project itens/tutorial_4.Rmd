@@ -1,0 +1,577 @@
+---
+title: | 
+  ![](https://i.imgur.com/SWWUQpP.png){width=500px style="display: block; margin:0 auto;"} 
+  Tutorial 5 - Estatística discreta, contínua e inferencial com foco especial em distribuição de Poison, Binomial, Normal e testes de hipótese
+author: "Victor Lobato dos Santos; Wellington Donizet Ferreira"
+output:
+  html_document:
+    highlight: haddock
+    includes:
+      in_header: "fever_icon.html"
+    theme: flatly
+    number_sections: yes
+    toc: yes
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+  pdf_document:
+    toc: yes
+---
+<div class="text-justify">
+# Probabilidade  
+
+A probabilidade dentro da estatística é uma área que busca analisar experimentos estatísticos com dados, levando em conta os desvios e os erros associados, para chegar em uma conclusão correta, ou seja, de forma resumida, na estatística a probabilidade trabalha com incertezas. Para introduzir a probabilidade estatística através do R, vamos entender alguns conceitos:  
+
+* **Experimento estatístico**: qualquer processo, ação ou fenomeno que pode ser repetido e tem resultado aleatório ou casual;  
+
+* **Espaço Amostral (S)**: Todos os resultados possíveis de um experimento. Por exemplo, o lançamento de um dado de seis faces, possui seis pontos amostrais;  
+
+* **Evento**: Subconjunto do espaço amostral que aexpressa um resultado definido. Por exemplo, a chance de cair números pares no lançamento de um dado de seis faces é A{2, 4, 6};  
+
+* **Variável aleatória**: É uma função *[f(x)]* que transforma os resultados de um espaço amostral em números reais;  
+
+Dado essas considerações, vamos aplicar um exemplo de probabilidade e calcular ela com auxílio do pacote **dplyr** no Rstudio:  
+
+Em uma população, 75% dos indivíduos são resistentes a um patógeno. Para uma amostra de 2 indivíduos dessa popuilação, qual seria o espaço amostral e as probabilidades?  
+
+```{r, message=FALSE, warning=FALSE}
+library(dplyr)
+
+#Probabilidade de ser resistente 
+prob_resistente <- 0.75
+
+#Tamanho da amostral
+tamanho_amostra <- 2
+
+# data frame com espaço amostral
+
+amostra <- expand.grid(individuo1 = c("Resistente", "Não Resistente"),
+                       individuo2 = c("Resistente", "Não resistente"))
+
+#Calculando a probabilidade
+
+resultado <- amostra %>%
+  mutate(Probabilidade = ifelse(individuo1 == "Resistente", prob_resistente, 1 - prob_resistente) *
+                         ifelse(individuo2 == "Resistente", prob_resistente, 1 - prob_resistente))
+
+resultado
+```  
+
+Com base neste script, vamos entender os passos realizados para calcular a probabilidade deste exemplo:  
+
+* Nós criamos um vetor (*prob_resistente*) que define para nós que a probabilidade de resistência total é de 75% (0.75) e em seguida criamos um vetor (*tamanho_amostra*) para indicar que o tamanho da nossa amostra é de 2 indivíduos;  
+
+* Criamos um data frame (*amostra*) utilizando a função `expand_grid` que mostra todas as combinações possíveis para as categorias existentes "Rssitente" e "Não Resistente";  
+
+* Para calcular de fato a probabilidade, criamos uma variável onde utilizamos o data frame *amostra* junto do operador **%>%** que pode ser utilizado para concatenar operações entre variáveis ou data frames. Com o auxílio do pacote `dplyr`, utilizamos a função `mutate` para adicionar uma nova coluna (*Probabilidade*) no data frame;  
+
+* A função `ifelse` é utilizada na programação como uma estutura condicional para ajudar a condicionar determinada execução, ao invés de executar tudo de uma vez, sem interrupções. De forma resumida, `ifelse` é usada quando por exemplo, se uma condição X for verdadeira, é executado uma linha de comando e, caso contrário, é executado outra linha de comando. Dessa forma, utilizamos essa estrutura condicional, para determinar as diferentes respostas para *individuo1* e *individuo2*.  
+
+O resultado deste script, é a probabilidade da resitência e não resistências de dois individuos para determinado patógeno.  
+
+# Distribuição de Poison  
+
+A distribuição de Poisson, também conhecida como distribuição dos eventos raros, acontece quando $$\begin{cases}
+ & \text{ n } \geq 50 \\ 
+ & \text{ p } \leq 0,1
+\end{cases}$$  
+
+Por exemplo: A ocorrência de gêmeos, a ocorrência de canhotos, fenômenos climáticos extremos, etc.  
+Sua fórmula é dada por 
+
+$$f(x) = e^{-\upsilon } * \frac{\upsilon ^{x}}{x!}$$  
+sendo que:  
+
+* **x**: variável aleatória discreta;  
+
+* **e**: É a base dos logaritmos perianos (e = 2.718...);  
+* $\upsilon$: É a média da distribuição.  
+
+* Além disso no RStudio, $\upsilon$ é interpretado por $\upsilon = \lambda * t$ de forma que $\lambda$ é a taxa de ocorrência e **t** é o intervalo de tempo ou espaço.
+
+Vale lembrar também que, na distribuição de Poison, a média é igual a variância.  
+Na IDE do R, podemos calcular a distribuição de Poisson, através da função `dpois` que nos retorna a probabilidade associada a um valor de X.  
+
+Suponha que a proporção de canhotos em uma população é de 3%. Em uma sala de 80 estudantes (n = 80), qual a probabilidade de se ter: Nenhum canhoto, um canhoto e mais de um canhoto.  
+Vamos calcular esse exemplo, utilizando a função `dpois`:  
+
+```{r, message=FALSE, warning=FALSE}
+lambda <- 80 / 100
+
+t <- 3
+
+(mu <-lambda * t )
+#Nenhum Canhoto
+nenhum_canhoto <- dpois(0, mu)
+nenhum_canhoto
+
+#um canhoto
+
+um_canhoto <- dpois(1, mu)
+um_canhoto
+#mais de um canhoto
+
+mais_de_um <- 1 - (nenhum_canhoto + um_canhoto) 
+mais_de_um
+
+```  
+Vamos agora, entender os passos realizados para calcular as distribuições de Poisson, segundo o exemplo.  
+
+* O primeiro passo aqui, é interpretar os dados para encontrar o valor de lambda. Temos que, no exemplo, possuímos um total de 80 estudantes e um intervalo de tempo de 3%, portanto, o primeiro passo é calcular a taxa de ocorrência, portanto criamos um vetor  `lambda <- 80/100`;  
+
+* O próximo passo é definir um vetor para nosso intervalo de tempo, portanto criamos `t <- 3`;  
+
+* Em seguida, nós calculamos o valor de $\upsilon$ ou mu, que corresponde ao valor de lambda vezes o intervalo de tempo (t) `(mu <- lambda * t )`. É necessário realizar estes passos pois, a função `dpois` calcula a a densidade da distribuição de Poisson através do parâmetro **lambda**, e aqui, queremos utilizar a média da dsitribuição representada por $\upsilon$. Esta função considera que o primeiro argumento é referente ao valor de x e o segundo é referente ao valor de **lambda** (`dpois(x, lambda`);  
+
+* Com as variáveis definidas, nós podemos de fato calcular a probabilidade de se ter nenhum canhoto, um canhoto e mais de um canhoto. Para nenhum canhoto, nós criamos uma variável utilizando a função `dpois` atribuindo a ela o valor de x = 0 (referente a nenhum canhoto) e o valor de  **lambda** = $\upsilon$ (mu) calculado anteriormente (`nenhum_canhoto <- dpois(0, mu)`);  
+
+* Para calculara a probabilidade para um canhoto, seguimos o mesmo padrão, com a diferença que agora atribuimos ao valor de x = 1 (`um_canhoto <- dpois(1, mu)`);  
+
+* Por fim, para descobrir a probabilidade de mais de um canhoto (x > 1) fazemo `1 - (nenhum_canhoto + um_canhoto) `; 
+
+O resultado de todo esse processo é a probabilidade de se ter nenhum, um ou mais de um canhoto em uma sala com 80 estudantes considerando que a proporção de canhotos de uma população é de 3%.  
+
+## Distribuição Binomial  
+
+A distribuição binomial é utilizado para casos em que se tem experimentos repetidos, com dois resultados possíveis. Sua fórmula é dada por:  
+
+$$P(x = k) = \frac{n!}{k!(n-k)!}p^k(1 - p)^{n-k}$$  
+
+* **P(x = k)** é a probabilidade de obter k sucessos; 
+
+* **n** é o valor amostral (quantidade de tentativas);
+
+* **p** é a probasbilidade de sucesso.
+
+No Rstudio, podemos calcular uma distribuição binomial através da função `dbinom()`.  
+Suponha que você está arremessando dardos com seus amigos e possui uma probabilidade de 0.2 de acertar o centro do alvo a cada arremesso. você decide realizar 10 arremessos consecutivos, mas antes disso, tenta calcular a probabilidade de acertar exatamente 3 vezes o centro do alvo em 10 arremessos, para isso, você utiliza a função binomial para realizar o cálculo:  
+
+```{r, message=FALSE, warning=FALSE}
+# Definindo os parâmetros
+
+n <- 10
+k <- 3
+p <- 0.2
+
+#Calculando a probabilidade com dbinom
+
+probabilidade <- dbinom(k, n, p)
+probabilidade
+```
+Através da função dbinom, a probabilidade de acertar 3 vezes ao centro do alvo é de 0.2013266.  
+Agora, vamos criar um gráfico utilizando os parâmetros obtidos, para demonstrar este resultado:  
+
+```{r, message=FALSE, warning=FALSE}
+#Carregando a biblioteca ggplot2
+library(ggplot2)
+
+#Criando u mdata frame com os valores
+
+df <- data.frame (k = 0:10, Probabilidade = dbinom(0:10, n, p))
+
+
+#Criando o gráfico com ggplot2
+ggplot(df, 
+       aes(x = factor(k), 
+           y = Probabilidade, 
+               fill = factor(k))) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c(rep("royalblue", 3), "red", 
+                               rep("royalblue", 7))) +
+  labs(
+    x = "k",
+    y = "P(X = k)",
+    title = "Arremessos de Dardos"
+  ) +
+  theme_grey()
+
+```
+
+Vamos entender os passos de criação deste gráfico:  
+
+* O primeiro passo foi criar um data frame com os valores de k e as probabilidades. Temos que *k* é referente ao número de sucessos do arremesso que vai de 0 a 10, por isso criamos um intervalo de 0 a 10 (`k = 0:10`) que auxiliará a compor as barras de nosso gráfico. Para probabilidade, calculamos a mesma através da função `dbinom`, utilizando o intervalo de 0 a 10;  
+
+* Para plotar o gráfico, utilizamos a função `ggplot()` onde aderimos o nosso data frame (*df*), definimos os eixos x e y através do argumento `aes` onde em `x = factor(k)` colocamos x como uma variável discreta de forma que *k* é dado como um fator. Em `fill = factor(k)` nós definimos a cor das barras, baseado na variável *k*. Apresentamos aqui a opção de factor, como uma outra forma de compor seu gráfico;  
+
+* Utilizamos `geom_bar()` para criar um gráfico de barras, juntamente do argumento `stat = "identity"` para indicar que a altura das barras serão definidas diretamente pelo dataframe;  
+
+* Em `scale_fill_manual()` nós definimos as cores de forma manual. Como queremos ressaltar a barra que indica *k = 3*, definimos a cor das três primeiras barras de azul com auxílio da função `rep`, e a barra referente ao número 3 preenchemos com a cor de vermelha.  
+
+* Para adicionar os rótulos dos eixos e o título, utilizamos a função `labs()` e os argumentos x, y e title, referente aos eixos e ao título do gráfico;  
+
+* Por fim, definimos o tema de fundo do gráfico com a função `theme_grey()`  
+
+O resultado é um gráfico de barras indicando a distribuição binomial da probabilidade de acertar 3 vezes o centro de um alvo com dardos de arremesso. 
+
+
+# Distribuição Normal  
+
+A distribuição normal é a primeira distribuição contínua em estatística e também, uma das mais utilizadas. Dessa forma, a distribuição de frequência da maioria dos dados observados para uma distribuição normal apresenta maior concentração dos mesmos dados próximos de um valor central, ao se afastar para os extremos dese valor, a concentração diminui, essa característica é o que denominamos *tendência central dos dados* que é mais evidente para variáveis aleatórias contínuas. Observe o exemplo de distribuição normal no gráfico abaixo.   
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+library(ggplot2)
+x <- seq(-3, 3, length = 100)
+y <- dnorm(x, mean=0, sd=1)
+
+data <- data.frame(x, y)
+
+ggplot(data, 
+       aes(x, y)) +
+  geom_line(color="blue", size=1) +
+  labs(x="X", 
+       y="Densidade", 
+       title="Distribuição Normal") +
+  geom_vline(xintercept=0, 
+             color="red", 
+             linetype="longdash") +
+  theme_gray()
+
+```
+  
+## Função de densidade da distribuição normal  
+A fórmula para calcular a densidade da distribuição normal é dada por:  
+
+$$f(x) = \frac{1}{\sigma \sqrt{2\pi }} * e^{-\frac{1}{2}}(\frac{x - \upsilon }{\sigma })^2$$  
+
+* **x**: é um valor real;  
+
+* $\upsilon$ é um valor real;  
+
+* $\sigma$ é um valor real e positivo.  
+
+### Função dnorm
+
+No R, para calcular a densidade de distribuição normal, utilizamos a função `dnorm(x, mean = 0, sd = 1)`, onde deve-se adicionar o valor de x, a média  e o desvio padrão para a curva normal. Veja o exemplo abaixo:
+
+```{r, message=FALSE, warning=FALSE}
+#Criando os parâmetros
+media_d <- 0
+sd_d <- 1
+valor_d <- 0.6  
+
+dnorm(valor_d, mean = media_d, sd = sd_d)
+
+```  
+Seguindo os parâmetros da função, calculamos a densindade normal de x = 0.6 sendo a média igual a 0 e o desvio padrão igual a 1, a partir dos vetores criados, que servirão para compor o gráfico.  
+
+```{r, message=FALSE, warning=FALSE}
+library(ggplot2)
+
+#Definindo os eixos do gráfico
+
+x <- seq(-3, 3, length = 1000) # Definindo os valores de  x para o gráfico
+y <- dnorm(x, mean = media_d, sd = sd_d) # Criando uma variável para a função de densidade de
+
+#Criando um data frame com os dados 
+df <- data.frame(x, y) 
+
+grafico <- ggplot(df, aes(x, y)) +
+  geom_line() +
+  geom_area(data = subset(df, x <= valor_d), 
+            aes(x, y), fill = "blue", alpha = 0.5) +
+  xlab("X") +
+  ylab("Densidade") +
+  ggtitle("Distribuição Normal") +
+  theme_gray()
+grafico
+
+```
+  
+Com o script a cima, nós calculamos a densidade da distribuição normal a partir da função `dnorm`, utilizando o ponto 0.6, média 0 e desvio padrão 1. A área sob a curva destacada em azul, segue até o ponto 0.6. Agora, vamos entender os passos de criação para este gráfico:  
+
+* Primeiro é necessário carregar a biblioteca **ggplot2** que foi usada para gerar o gráfico;   
+
+* Em seguida, criamos uma variável para x (*x*), utilizando a função `seq` para criar uma sequência de valores de x que variam de -3 a 3 e 1000 pontos intermediários (`x <- seq(-3, 3, length = 1000)`) para que possamos obter uma melhor resolução durante a plotagem do gráfico;  
+
+* O próximo passo, foi criar uma variável para y (*y*) a partir da função `dnorm()` que utilizamos para calcular a densindade normal, portanto fizemos `y <- dnorm(x, mean = media_d, sd = sd_d)`;  
+
+* Utilizamos a função `data.frame()` para criar um dataframe (*df*) que contenha as variáveis que criamos para os eixos x e y (`df <- data.frame(x, y)`);  
+
+* Para criar o gráfico, utilizamos a função `ggplot2()` especificando que queremos utilizar os dados do data frame criado, e determinando os eixos x e y a partir do argumento `aes` (`grafico <- ggplot(df, aes(x, y))`);  
+
+* Com a função `geom_line()` nós traçamos a curva da função de probabilidade e também;  
+
+* Em `geom_area(data = subset(df, x <= valor_d), aes(x, y), fill = "blue", alpha = 0.5)`, uitilizamos a função `geom_area()` que serviu neste gráfico, para preencher a área sob a curva. O argumento `data = subset(df, x <= valor_d` foi utilizado para especificar o dataframe (conjunto de dados) que será utilizado para definir a área preenchida, dessa forma, o argumento `subset` filtra o dataframe `df` de acordo com a condição de que x seja menor ou igual aos valores especificados no vetor `valor_d`. Dessa forma, criamos um conjunto de dados que possui apenas os pontos da curva que estão presentes a esquerda do valor especificado (*valor_d = 0.6*). Com `aes` nós definimos o eixo, com o argumento `fill = ` nós definimos a cor e, o argumento `alpha = ` definimos a opacidade o preenchimento;  
+
+* Utilizamos `xlab()`, `ylab()` e `ggtitle()` para especificar os rótulos referente aos eixos x, y e o título do gráfico  
+
+* Por fim, utilizamos a função `theme_gray()` para definir o estilo do tema do nosso gráfico.  
+
+
+## Cálculo de probabilidade na distribuição normal  
+
+A área comprendida entre duas ordenadas levantadas sobre dois pontos a e b do eixo x da distribuição normal, expressa a probabilidade da variável aleatória x para assumir os valores de a e b.  
+No Rstudio, para calcularmos a probabilidade na distribuição normal, utilizamos a função `pnorm`.  
+
+### Função pnorm  
+
+Vamos supor que queremos calcular a probabilidade de um valor ser menor que 2 em uma distribuição normal, considerando que a média é igual a 0 e o desvio padrão é igual a 1:  
+
+```{r, message=FALSE, warning=FALSE}
+
+#Criando os parâmetros  
+media_p <- 0
+sd_p <- 1  
+valor_p <- 2
+
+#calculando a probabilidade na distribuição normal
+pnorm(valor_p, mean = media_p, sd = sd_p)
+
+```  
+Veja que, para calcular `pnorm`, utilizamos os mesmos passos feitos em `dnorm`. Aqui, também criamos alguns vetores (*media_p*, *sd_p*, *valor_p*) que possuem os valores desejados para calcular `pnorm` e que irão auxiliar na criação do gráfico abaixo:  
+
+```{r, message=FALSE, warning=FALSE}
+#Carregando a biblioteca ggplot2
+library(ggplot2)
+
+#Definindo os eixos do gráfico  
+
+x <- seq(-4, 4, length = 1000) # Valores x para o gráfico
+y <- dnorm(x, mean = media_p, sd = sd_p) # Função densidade de probabilidade
+
+df <- data.frame(x, y) # dataframe com os valores de x e y
+
+#Criando o gráfico
+grafico_p <- ggplot(df, aes(x, y)) +
+  geom_line() +
+  geom_area(data = subset(df, x <= valor_p), 
+            aes(x, y), fill = "blue", alpha = 0.5) +
+  xlab("X") +
+  ylab("Densidade") +
+  ggtitle("P(Z<1)") +
+  theme_gray()
+
+grafico_p
+
+```
+  
+Veja que, utilizamos os mesmos passos vistos anteriormente para a criação do gráfico de densidade, a única diferença aqui foram os valores utilizados para a criação do mesmo.  
+
+Agora, vamos supor que queremos calcular a probabilidade uma variável definindo um valor maior que 2  
+
+
+```{r, message=FALSE, warning=FALSE}
+
+#Definindo os parâmetros
+media_p2 <- 0
+sd_p2 <- 1
+valor_p2 <- 2
+
+
+#Calculando a probabilidade
+1-pnorm(valor_p2, mean = media_p2, sd = sd_p2)
+
+```
+
+Para calcular a probabilidade de uma variável a partir de um valor maior que 2 neste exemplo, subtraímos 1 antes da função `pnorm()`.  
+
+```{r, message=FALSE, warning=FALSE}
+#Definindo os eixos do gráfico  
+
+x <- seq(-4, 4, length = 1000) # Valores de x para o gráfico
+
+y <- dnorm(x, mean = media_p2, sd = sd_p2) # Função de densidade de probabilidade
+
+df <- data.frame(x, y) # dataframe com os valores de x e y
+
+#Criando o gráfico
+grafico_p2 <- ggplot(df, aes(x, y)) +
+  geom_line() +
+  geom_area(data = subset(df, x >= valor_p2), 
+            aes(x, y), fill = "blue", alpha = 0.5) +
+  xlab("X") +
+  ylab("Densidade") +
+  ggtitle("P(Z>1)") +
+  theme_gray()
+
+grafico_p2
+
+```  
+
+Como neste exemplo nós queremos verificar a probabilidade para um valor maior que 2, nós seguimos os mesmo padrões dos gráficos anteriores. A diferença aqui está na linha que contém `geom_area(data = subset(df, x >= valor_p2)` pois, como queremos um valor maior que 2 e nosso vetor `valor_p2` corresponde a 2, basta mudarmos o sinal antes utilizado de **<=** para **>=** dentro do parâmetro `x >= valor_p2`, indicando que queremos que o valor de x seja maior ou igual a 2.  
+
+Podemos também, calcular a probabilidade de uma variável conter um valor entre **a** e **b**, por exemplo:  
+
+```{r, message=FALSE, warning=FALSE}
+#Definindo parâmetros
+media_p3 <- 0
+valor_p3_1 <- 0
+valor_p3_2 <- 1
+sd_p3 <- 1
+
+pnorm(valor_p3_1, mean = media_p3, sd = sd_p3) -pnorm(valor_p3_2, mean = media_p3, sd = sd_p3)
+
+```
+
+Veja que aqui, para descobrir o valor entre duas variáveis nós definimos dois vetores (*valor_p3_1 e valor_p3_2*) com valores diferentes, em seguida aplicamos a função pnorm para ambos, subtraindo o primeiro pelo segundo.  
+```{r, message=FALSE, warning=FALSE}
+#carregando a biblioteca dplyr
+
+library(dplyr)
+
+# Calculando a probabilidade
+probabilidade <- pnorm(valor_p3_2, mean = media_p3, sd = sd_p3) - pnorm(valor_p3_1, mean = media_p3, sd = sd_p3)
+
+#Definindo os eixos do gráfico  
+
+
+x <- seq(-4, 4, length = 1000) # Valores de x para o gráfico
+
+y <- dnorm(x, mean = media_p3, sd = sd_p3) # Função de densidade de probabilidade
+
+df <- data.frame(x, y) # dataframe com os valores de x e y
+
+#Criando o gráfico
+
+grafico_p3 <- ggplot(df, aes(x, y)) +
+  geom_line() +
+  geom_area(data = subset(df, x >= valor_p3_1 & x <= valor_p3_2), 
+            aes(x, y), fill = "blue", alpha = 0.5) +
+  xlab("X") +
+  ylab("Densidade") +
+  ggtitle("P(0<Z<1)") +
+  theme_gray()
+
+grafico_p3
+```
+
+
+A construção do gráfico, segue os mesmo padrões dos gráficos anteriores para distribuição normal, a diferença aqui mais uma vez está na linha que contém `geom_area(data = subset(df, x >= valor_p3_1 & x <= valor_p3_2)`. Veja que aqui nós definimos que x deveria ser maior e igual ao primeiro valor (*valor_p3_1*) e também menor ou igual ao segundo valor (*valor_p3_2*) para isso nós utilizamos o operador **&**, que é comumente utilizado em algumas linguagens de programação, para indicar "e", dessa forma nós definimos um limite de preenchimento para a área abaixo da curva entre o primeiro e segundo valor.  
+
+### Função qnorm  
+
+Para calcular o quartil da curva no Rstudio, utilizamos a função `qnorm` onde deve-se indicar os parâmetros sendo a probabilidade, média e o desvio padrão da curva, como por exemplo:  
+
+```{r, message=FALSE, warning=FALSE}
+#Definindo os parâmetros
+media_q <- 0
+valor_q <- 0.85
+sd_q <- 1
+
+#Calculando qnorm
+qnorm(valor_q, mean = media_q, sd = sd_q)
+```
+
+# Teste de Hipótese  
+
+O teste de hipótese é utilizado para avaliar os resultados de um experimento. É uma regra de decisão que permite aceitar ou rejeitar uma hipótese sobre um ou mais parâmetros da população, com base nas informações da amostra.  
+De forma correlata tem-se as **hipóteses estatísticas** que são consideradas sobre a distribuição de probabilidade da população.  
+
+* **Hipótese de nulidade (H0)**: estabelece que não existe diferença entre os parâmetros considerados. Se enunciada em termos quatitativos, geralmente, é uma igualdade.  
+
+*  **Hipótese alternativa (H1 ou H2)**: É qualquer hipótese diferente de H0. Ou seja, é aquela que será aceita caso o teste indique que H0 deve ser rejeitada. Quando enunciada em termos quantitativos, geralmente é uma desigualdade.  
+
+Para teste de hipóteses, consideramos também os **erros cometidos na aplicaçãode um teste**, temos erro tipo I e tipo II:  
+
+* **Erro tipo I**: É o erro de rejeitar H0 dado que essa hipótese é verdadeira;  
+
++ A probabilidade de ocorrer o erro do tipo I é representada pelo nível de significância do teste  
+
+* **Erro tipo II**: Não rejeitar a hipótese de nulidade dado que essa hipótese é falsa;  
+
++ A probabilidade de ocorrer o erro do tipo II é representada por $\beta$. A probabilidade de $1 - \beta $ é chamada de **poder do teste**;  
+
+A **Significância** de um teste estatístico também é parte importante do processo pois, um teste de hipóteses é significativo ou insgnificante a um nível de significância probabilidade, se a hipótese H0 for rejeitada a a este nível, caso contrário o teste não é significativo.
+
+## Teste unilateral e bilateral  
+
+De acordo com o objetivo estudado, formamos a hipótese alternativa do teste e podemos usar os dois extremos da distribuição teórica para a região crítica (teste bilateral) ou apenas um dos extremos da distribuição com região crítica (teste unilateral)
+
+No Rstudio, calculamos um teste de hipótese através da função `t.teste()`.  
+Suponha que você deseja determinar se a biodiversidade de um ecossistema é afetada pela presença de uma determinada espécie invasora. Você coletou dados sobre a diversidade de espécie em dois ecossistemas sendo, um com a espécie invasora e outra sem ela e você possui as seguintes hipóteses:  
+
+* Hipótese nula: A média da diversidade de espécies nos dois ecossistemas é igual;  
+
+* Hipótese alternativa: A média da diversidade de espécies nos dois ecossistemas é diferente;  
+
+Seu nível de significância é de 0,05.  
+
+```{r, message=FALSE, warning=FALSE}
+#dados da diversidade com presença da espécie invasora
+diversidade_invasora <- c(12, 15, 18, 21, 24)
+
+#dados da diversidade sem a espécie invasora
+diversidade <- c(10, 12, 14, 16, 18)
+
+#Calculando o teste de hipóteses
+t.test(diversidade_invasora, diversidade, 
+       alternative = "two.sided", 
+       conf.level = 0.95)  
+```
+
+Vamos entender os passos do script para em seguia interpretar os dados:  
+
+* Primeiro foram criados vetores com os dados hipotéticos referente ao ecossistema com espécie invasora (*diversidade_invasora*) e ao ambiente sem a espécie invasora (*diversidade*);  
+
+* Em seguida nós utilizamos a função `t.test()` para calcular o teste de hipóteses. Adicionamos os vetores selecionados e acrescentamos o argumeto `alternative` que foi definido como `alternative = "two.sided"` indicanto que estamos fazendo um teste de hipótese bilateral. Existem diferentes possibilidades para compor o argumento alternative, como por exemplo, caso tivéssemos definido o argumento alternative com "*greater*", nosso teste iria verificar se a média da população seria maior que a outra. Consulte a aba de ajuda da função para verificar diferentes possibilidades;  
+
+* Acrescentamos também, o argumento `conf.level` e definimos como 0.95 para demosntrar que queremos um intervalo de confiança de 95%.  
+
+Perceba que o valor de p (*p-value*) do nosso teste, foi menor do que o nível de significância desejado (0,05), demonstrando que existem evidências suficientes para rejeitar a hipótese H0 sobre que a média da diversidade entre os dois ecossistemas são iguais, permitindo concluir que a espécie invasora presente naquele ecossistema, afeta de forma negativa a biodiversidade.  
+
+Para interpretar ainda melhor os resultados deste teste, podemos por exemplo, plotar um gráfico boxplot a partir da função `boxplot()`  
+
+```{r, message=FALSE, warning=FALSE}
+library(ggplot2)
+
+dados_df <- data.frame(
+  tratamento = c("Invasora", "Nao invasora"),
+  diversidade = c(diversidade_invasora, diversidade)
+)
+
+#plotando o gráfico
+ggplot(dados_df, aes(x = tratamento, y = diversidade)) +
+  geom_boxplot(fill = c("royalblue", "orange")) +
+  stat_summary(fun.y = mean, geom = "point", size = 3, color = "red") +
+  labs(title = "Diversidade de especies com e sem especie invasora",
+       x = "Presenca de especies",
+       y = "Numero de especies") +
+  annotate("text", x = 1, y = 20, label = "p-value = 0.1608", color = "red") +
+  theme_gray()
+
+```  
+
+Vamos explicar a criação deste gráfico:  
+
+* Utilizamos a função `ggpplot()`, do pacote *ggplot2* para realizar o plot do gráfico e ddicionamos na função, o dataframe criado contendo as variáveis de nosso exemplo. Em seguida, adicionamos o argumento `aes` para definir nossos eixos x e y;  
+
+* Com a função `geom_boxplot()` nós definimos que o tipo de gráfico desejado é um boxplot. Em seguida, adicionamos o argumento `fill` para definir as cores das caixas.  
+
+* A função `stat_summary` nos permite adicionar resumos de dados no gráfico, como média, mediana, etc. Nela, atribuimos o argumento `fun.y = mean` para adicionar a média dos dados no resumo e, com o argumento `geom = point` nós definimos a forma geométrica que essa média será apresentada no gráfico. Com o argumento `size = 3`, nós definimos o tamanho da forma e com `color`, definimos a cor da forma;  
+
+* Adiante, nós utilizamos a função `labs()`, para definir o nome do título, eixo x e eixo y;  
+
+* Por fim, com a função `annotate()` nós acrescentamos elementosa adiconais no gruáfico, como textos, linhas, etc. Aqui, nós definimos um texto ("text"), no local do eixo x e y, respectivamente e, com o argumento `label` nós definimos nosso texto.  
+
+O boxplot pode ser um gráfico bom para este caso pois, com ele é possível visualizar que a média referente a diversidade das epécies é menor no ecossitema onde se tem a espécie invasora. Além de que, o intervalo interquartil da diversidade de espécies, é maior no ambiente que não se tem a espécie invasora.
+
+Vamos aplicar mais um exemplo:  
+
+A média de tempo de sono dos idosos em casas de repouso é de 6.13h. Uma enfermeira quer saber se os idosos que residem no pavilhão em que trabalha tem tempo de sono diferente do tempo de sono de idosos internatos em outras instituições. Uma mostra de quatro pessoas fornecem os seguintes tempos de sono: 5, 4, 6, 5. Aplique o teste t com nível de significância de 5% (0,05).  
+
+```{r, message=FALSE, warning=FALSE}
+# definindo os parâmetros
+tempo_sono <- c(5, 4, 6, 5)
+media_sono <- 6.13
+
+#Calculando o teste t
+
+t.test(tempo_sono, 
+       mu = media_sono, 
+       alternative = "two.sided", 
+       conf.level = 0.05)
+
+```  
+Perceba que nós seguimos basicamente os mesmos passos do exemplo anterior na criação do script. A diferença aqui está no argumento `mu` que indica o valor verdadeiro da média.  
+No resultado deste teste t, temos que o valor de p é maior do que o nível de significância, portanto, não existem evidências suficentes para rejeitar a hipótese H0 de que as médias são iguais.  
+
+# Fim do Módulo  
+
+Chegamos então, ao fim deste módulo onde trabalhamos alguns métodos de análises estatísticas. Esperamos que o conhecimento passado aqui, tenha sido de alguma forma, proveitoso para você leitor. Agradecemos imensamente pelo seu interesse e disponibilidade de aprender conosco.
+
+
+
+
+
+
+</div>
